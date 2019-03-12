@@ -1,0 +1,98 @@
+//Cedric Castillo
+//Spring 2019
+//Project 1 - Box of Wonder
+
+//I am a Fun House
+
+#include <Wire.h>
+#include <Servo.h>
+#include <Adafruit_NeoPixel.h>
+
+Servo groveServo;
+
+// CONSTANTS DECLARATION 
+
+// potentiometer to servo
+const int pinKnobServo = 0;      // potentiometer pin A0
+const int pinServo = 7;          // servo pin D3 
+
+// potentiometer to ring 
+const int pinKnobRing = 3;      // potentiomenter pin A3
+const int pinRing = 6;          // ring led pin 6
+const int pixelCount = 20;
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(pixelCount, pinRing, NEO_GRB + NEO_KHZ800);
+
+void setup() {
+  
+  // Set up serial communication
+  Serial.begin(9600);     
+
+  // POTENTIOMETER TO SERVO
+  
+  // Tell the Servo object which pin to use to control the servo.
+  groveServo.attach(pinServo);   
+ 
+  // Configure the angle sensor's pin for input signals.
+  pinMode(pinKnobServo, INPUT); 
+
+  // POTENTIOMETER TO RING 
+  pinMode(pinKnobRing, INPUT_PULLUP);
+  strip.setBrightness(255);
+  strip.begin();
+  strip.show();
+}
+
+// Allows smooth pixel-by-pixel transition between colors
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos; 
+  
+  if(WheelPos < 85) 
+  {
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  
+  else if(WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+
+  else {
+    WheelPos -= 170;
+    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
+
+// Changes the color
+void rainbow(uint16_t j){
+  uint16_t i;
+
+  for(i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, Wheel((i+j) & 255));
+  }
+  strip.show();
+}
+
+void loop() {
+
+  // POTENTIOMETER TO SERVO
+  // Read potentiometer input and output as a change in the servo 
+
+  // Read the value of the angle sensor.
+  int knobServo = analogRead(pinKnobServo);
+  Serial.println("knobServo: " + String(knobServo));
+
+  // Use map() to convert potentiometer value to servo angle
+  int knobServoConverted = map(knobServo, 0, 1023, 0, 179); 
+
+  // Move the servo
+  groveServo.write(knobServoConverted);
+
+  // POTENTIOMETER TO RING 
+  
+  int knobRing = analogRead(pinKnobRing);
+  uint16_t j = map(knobRing, 0, 1024, 0, 256);
+  Serial.println ("j = " + String(j));
+
+  rainbow(j);
+}
